@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal AI OS — Developer Workbench</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #10B981;
+            --color-primary-dim: rgba(16, 185, 129, 0.15);
+            --color-background: #09090b;
+            --color-surface: #18181b;
+            --color-surface-hover: #27272a;
+            --color-border: #3f3f46;
+            --color-border-dim: #27272a;
+            --color-text: #fafafa;
+            --color-text-muted: #a1a1aa;
+            --color-text-dim: #71717a;
+            --gradient-primary: linear-gradient(135deg, #10B981, #34D399);
+            --gradient-dark: linear-gradient(180deg, #18181b 0%, #09090b 100%);
+            --typography-font-heading: 'Space Grotesk', sans-serif;
+            --typography-font-body: 'Inter', sans-serif;
+            --typography-font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--color-background);
+            color: var(--color-text);
+            font-family: var(--typography-font-body);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .slide-deck {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        @media (min-width: 769px) {
+            .slide-deck {
+                max-width: calc(100vh * 16 / 9);
+                max-height: calc(100vw * 9 / 16);
+                margin: auto;
+                position: absolute;
+                inset: 0;
+            }
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease;
+            background: var(--color-background);
+            overflow: hidden;
+        }
+
+        .slide.active { opacity: 1; visibility: visible; }
+
+        .slide-content {
+            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: var(--typography-font-heading);
+            letter-spacing: -0.02em;
+        }
+
+        .slide-title {
+            font-size: clamp(36px, 5.5vw, 72px);
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .slide-subtitle {
+            font-size: clamp(16px, 2vw, 22px);
+            color: var(--color-text-muted);
+            font-weight: 400;
+            line-height: 1.5;
+            max-width: 700px;
+        }
+
+        .section-title {
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 600;
+            color: var(--color-text);
+            line-height: 1.15;
+            text-align: center;
+        }
+
+        .section-title .accent {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .body-text {
+            font-size: clamp(14px, 1.6vw, 18px);
+            color: var(--color-text-muted);
+            line-height: 1.7;
+            max-width: 640px;
+        }
+
+        /* Tag */
+        .tag {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: var(--color-primary-dim);
+            color: var(--color-primary);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-dim);
+            border-radius: 12px;
+            padding: 28px 24px;
+            text-align: left;
+            transition: border-color 0.2s;
+        }
+
+        .card:hover { border-color: var(--color-border); }
+
+        .card-icon {
+            width: 40px; height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: var(--color-primary-dim);
+            color: var(--color-primary);
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+
+        .card p {
+            font-size: 13px;
+            color: var(--color-text-muted);
+            line-height: 1.5;
+        }
+
+        /* Metric cards */
+        .metric-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-dim);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-family: var(--typography-font-heading);
+            font-size: clamp(32px, 4vw, 56px);
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .metric-label {
+            font-size: 13px;
+            color: var(--color-text-muted);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* Tech stack pills */
+        .pill-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .pill {
+            padding: 8px 18px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-dim);
+            color: var(--color-text-muted);
+        }
+
+        .pill.highlight {
+            background: var(--color-primary-dim);
+            border-color: rgba(16, 185, 129, 0.25);
+            color: var(--color-primary);
+        }
+
+        /* Architecture diagram */
+        .arch-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .arch-box {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-dim);
+            border-radius: 12px;
+            padding: 28px 24px;
+        }
+
+        .arch-box h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .arch-item {
+            padding: 8px 0;
+            font-size: 13px;
+            color: var(--color-text-muted);
+            border-bottom: 1px solid var(--color-border-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .arch-item:last-child { border-bottom: none; }
+
+        .arch-connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: var(--color-text-dim);
+            font-size: 12px;
+        }
+
+        .arch-connector .arrow {
+            font-size: 24px;
+            color: var(--color-primary);
+        }
+
+        /* Code block */
+        .code-block {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-dim);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: left;
+            width: 100%;
+            max-width: 640px;
+            font-family: var(--typography-font-mono);
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--color-text-muted);
+            overflow: hidden;
+        }
+
+        .code-block .comment { color: var(--color-text-dim); }
+        .code-block .cmd { color: var(--color-primary); }
+        .code-block .url { color: #34D399; }
+
+        /* Two-column layout */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .split-layout .left { text-align: left; }
+
+        /* List */
+        .feature-list {
+            list-style: none;
+            text-align: left;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            font-size: 15px;
+            color: var(--color-text-muted);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--color-border-dim);
+        }
+
+        .feature-list li:last-child { border-bottom: none; }
+
+        .feature-list .check {
+            color: var(--color-primary);
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Terminal mockup */
+        .terminal-mockup {
+            background: #0c0c0c;
+            border: 1px solid var(--color-border-dim);
+            border-radius: 12px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border-dim);
+        }
+
+        .terminal-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ef4444; }
+        .terminal-dot.yellow { background: #eab308; }
+        .terminal-dot.green { background: #22c55e; }
+
+        .terminal-body {
+            padding: 16px;
+            font-family: var(--typography-font-mono);
+            font-size: 12px;
+            line-height: 1.8;
+            color: var(--color-text-muted);
+        }
+
+        .terminal-body .prompt { color: var(--color-primary); }
+        .terminal-body .output { color: var(--color-text-dim); }
+
+        /* Animations */
+        .animate-fade-up {
+            animation: fadeUp 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-scale {
+            animation: scaleIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .animate-stagger > * {
+            opacity: 0;
+            animation: fadeUp 0.5s ease-out forwards;
+        }
+        .animate-stagger > *:nth-child(1) { animation-delay: 0.1s; }
+        .animate-stagger > *:nth-child(2) { animation-delay: 0.2s; }
+        .animate-stagger > *:nth-child(3) { animation-delay: 0.3s; }
+        .animate-stagger > *:nth-child(4) { animation-delay: 0.4s; }
+        .animate-stagger > *:nth-child(5) { animation-delay: 0.5s; }
+        .animate-stagger > *:nth-child(6) { animation-delay: 0.6s; }
+
+        /* Decorative elements */
+        .glow-orb {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(63, 63, 70, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(63, 63, 70, 0.15) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transition: width 0.3s;
+            z-index: 1000;
+        }
+
+        /* Navigation */
+        .nav-controls {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-dim);
+            color: var(--color-text-muted);
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--color-surface-hover);
+            color: var(--color-text);
+            border-color: var(--color-border);
+        }
+
+        .slide-counter {
+            color: var(--color-text-dim);
+            font-size: 12px;
+            font-family: var(--typography-font-mono);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .slide { padding: 32px 24px; }
+            .card-grid-3, .card-grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .split-layout { grid-template-columns: 1fr; gap: 24px; }
+            .arch-container { grid-template-columns: 1fr; }
+            .arch-connector { flex-direction: row; }
+        }
+
+        @media (max-width: 480px) {
+            .slide { padding: 24px 16px; }
+            .card-grid-3, .card-grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="slide-deck">
+
+    <!-- ============ SLIDE 1: TITLE ============ -->
+    <div class="slide active">
+        <div class="grid-bg"></div>
+        <div class="glow-orb" style="top: -150px; right: -100px;"></div>
+        <div class="glow-orb" style="bottom: -200px; left: -150px;"></div>
+        <div class="slide-content animate-fade-up">
+            <span class="tag">Local-First Developer Tool</span>
+            <h1 class="slide-title" style="margin-top: 16px;">Personal AI OS</h1>
+            <p class="slide-subtitle" style="margin-top: 8px;">
+                A centralized workspace for AI-assisted development.<br>
+                Prompt engineering, session management, scheduling, and more.
+            </p>
+            <div class="code-block" style="max-width: 380px; margin-top: 24px; text-align: center; padding: 16px;">
+                <span class="cmd">npm run dev</span><br>
+                <span class="output">Frontend &rarr; localhost:4200</span><br>
+                <span class="output">Backend &nbsp;&rarr; localhost:4201</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 2: PROBLEM ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="slide-content">
+            <span class="tag">The Problem</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                AI dev workflows are <span class="accent">fragmented</span>
+            </h2>
+            <div class="card-grid card-grid-3 animate-stagger" style="margin-top: 32px;">
+                <div class="card">
+                    <div class="card-icon">&#x26A0;</div>
+                    <h3>Scattered Prompts</h3>
+                    <p>Prompts live in random files, clipboard, and chat history. No versioning, no variables, no organization.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F504;</div>
+                    <h3>Session Chaos</h3>
+                    <p>Dozens of Claude sessions across terminals. No way to track which project, directory, or profile each belongs to.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x23F0;</div>
+                    <h3>Manual Everything</h3>
+                    <p>Recurring tasks require manual execution. No scheduling, no notifications, no process oversight.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 3: SOLUTION ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="glow-orb" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+        <div class="slide-content animate-fade-up">
+            <span class="tag">The Solution</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                One dashboard to <span class="accent">orchestrate it all</span>
+            </h2>
+            <p class="body-text" style="text-align: center; margin-top: 8px;">
+                Personal AI OS gives you a unified web interface to manage prompts, sessions, scheduled tasks, profiles, and terminals &mdash; all backed by a local SQLite database with zero cloud dependencies.
+            </p>
+            <div class="pill-group" style="margin-top: 28px;">
+                <span class="pill highlight">Prompt Library</span>
+                <span class="pill highlight">Session Manager</span>
+                <span class="pill highlight">Task Scheduler</span>
+                <span class="pill highlight">Profile Manager</span>
+                <span class="pill highlight">Embedded Terminal</span>
+                <span class="pill highlight">Notifications</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 4: FEATURES — PROMPTS ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="slide-content">
+            <span class="tag">Core Feature</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                Prompt <span class="accent">Engineering</span>
+            </h2>
+            <div class="split-layout" style="margin-top: 28px;">
+                <div class="left">
+                    <ul class="feature-list">
+                        <li><span class="check">&#x2713;</span> CodeMirror 6 editor with Markdown + <code style="color: var(--color-primary); font-family: var(--typography-font-mono); font-size: 13px;">{{variable}}</code> highlighting</li>
+                        <li><span class="check">&#x2713;</span> Auto-save with version history snapshots</li>
+                        <li><span class="check">&#x2713;</span> Tag system with filter chips and autocomplete</li>
+                        <li><span class="check">&#x2713;</span> AI-powered prompt enhancement via Claude CLI</li>
+                        <li><span class="check">&#x2713;</span> Version restore from history drawer</li>
+                        <li><span class="check">&#x2713;</span> Variable substitution when inserting into sessions</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="terminal-mockup">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span style="font-size: 12px; color: var(--color-text-dim); margin-left: 8px;">prompt-editor.md</span>
+                        </div>
+                        <div class="terminal-body">
+                            <span style="color: #71717a;"># Code Review Prompt</span><br><br>
+                            <span style="color: #a1a1aa;">Review the following code in</span><br>
+                            <span style="color: var(--color-primary);">{{repository}}</span>
+                            <span style="color: #a1a1aa;">for:</span><br><br>
+                            <span style="color: #a1a1aa;">- Security vulnerabilities</span><br>
+                            <span style="color: #a1a1aa;">- Performance issues</span><br>
+                            <span style="color: #a1a1aa;">- Code style in</span>
+                            <span style="color: var(--color-primary);">{{language}}</span><br><br>
+                            <span style="color: #71717a;">v3 &middot; Saved 2s ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 5: FEATURES — SESSIONS ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="slide-content">
+            <span class="tag">Core Feature</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                Session <span class="accent">Management</span>
+            </h2>
+            <div class="split-layout" style="margin-top: 28px;">
+                <div>
+                    <div class="terminal-mockup">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span style="font-size: 12px; color: var(--color-text-dim); margin-left: 8px;">session: auth-refactor</span>
+                        </div>
+                        <div class="terminal-body">
+                            <span class="prompt">~/projects/myapp</span> <span style="color: #6366f1;">main</span><br>
+                            <span class="prompt">$</span> <span style="color: var(--color-text);">claude --continue</span><br>
+                            <span class="output"><br>&#x276F; Analyzing auth middleware...</span><br>
+                            <span class="output">&#x276F; Found 3 files to refactor</span><br>
+                            <span class="output">&#x276F; Applying changes to</span><br>
+                            <span style="color: var(--color-primary);">&nbsp;&nbsp;server/middleware/auth.ts</span><br>
+                            <span class="output"><br>&#x2714; Session persisted</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="left">
+                    <ul class="feature-list">
+                        <li><span class="check">&#x2713;</span> Embedded xterm.js terminal per session</li>
+                        <li><span class="check">&#x2713;</span> Project directory + live git branch display</li>
+                        <li><span class="check">&#x2713;</span> Claude profile selection per session</li>
+                        <li><span class="check">&#x2713;</span> Auto-continue with <code style="color: var(--color-primary); font-family: var(--typography-font-mono); font-size: 13px;">--continue</code> flag</li>
+                        <li><span class="check">&#x2713;</span> Status tracking: active / completed / archived</li>
+                        <li><span class="check">&#x2713;</span> Tools panel: prompts, skills, config viewer</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 6: MORE FEATURES ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="slide-content">
+            <span class="tag">Platform Features</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                Everything <span class="accent">connected</span>
+            </h2>
+            <div class="card-grid card-grid-3 animate-stagger" style="margin-top: 28px;">
+                <div class="card">
+                    <div class="card-icon">&#x23F1;</div>
+                    <h3>Task Scheduler</h3>
+                    <p>Cron-based and one-shot tasks. Claude CLI execution with token/cost tracking. Run history and enable/disable toggle.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F464;</div>
+                    <h3>Profile Manager</h3>
+                    <p>Auto-discovery of Claude profiles. Per-profile CLAUDE.md, settings, and skills. Login terminal per profile.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F514;</div>
+                    <h3>Notifications</h3>
+                    <p>Real-time WebSocket alerts. Claude hook integration for stop, idle, and task events. Per-profile hook toggle.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x2318;</div>
+                    <h3>Command Center</h3>
+                    <p>Quick-access command palette for fast navigation and actions across the entire workspace.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F5A5;</div>
+                    <h3>Process Monitor</h3>
+                    <p>Scan and kill orphaned Claude processes. Auto-cleanup on server startup. Bulk or per-PID management.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F310;</div>
+                    <h3>LAN Mode</h3>
+                    <p>Self-signed HTTPS for secure context. Mobile access with voice input. Auto-detects LAN IP.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 7: ARCHITECTURE ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="slide-content">
+            <span class="tag">Architecture</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                Built for <span class="accent">developers</span>
+            </h2>
+            <div class="arch-container animate-stagger" style="margin-top: 28px;">
+                <div class="arch-box">
+                    <h3>Frontend</h3>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> Next.js 16 (App Router)</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> React 19</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> Tailwind CSS v4</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> CodeMirror 6</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> xterm.js</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> Phosphor Icons</div>
+                </div>
+                <div class="arch-connector">
+                    <span style="font-size: 11px; color: var(--color-text-dim);">REST API</span>
+                    <span class="arrow">&harr;</span>
+                    <span style="font-size: 11px; color: var(--color-text-dim);">WebSocket</span>
+                </div>
+                <div class="arch-box">
+                    <h3>Backend</h3>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> Express.js + TypeScript</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> SQLite (WAL mode)</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> node-pty terminals</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> node-cron scheduler</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> Modular architecture</div>
+                    <div class="arch-item"><span style="color: var(--color-primary);">&#x25CF;</span> Docker ready</div>
+                </div>
+            </div>
+            <div class="pill-group" style="margin-top: 24px;">
+                <span class="pill">Turborepo</span>
+                <span class="pill">npm Workspaces</span>
+                <span class="pill">16 DB Migrations</span>
+                <span class="pill">11 Backend Modules</span>
+                <span class="pill">40+ API Endpoints</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 8: METRICS ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="glow-orb" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+        <div class="slide-content">
+            <span class="tag">By the Numbers</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                Platform <span class="accent">scale</span>
+            </h2>
+            <div class="card-grid card-grid-4 animate-stagger" style="margin-top: 32px;">
+                <div class="metric-card">
+                    <div class="metric-value">11</div>
+                    <div class="metric-label">Backend Modules</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">40+</div>
+                    <div class="metric-label">API Endpoints</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">16</div>
+                    <div class="metric-label">DB Migrations</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">2</div>
+                    <div class="metric-label">WebSocket Channels</div>
+                </div>
+            </div>
+            <div class="card-grid card-grid-3 animate-stagger" style="margin-top: 16px;">
+                <div class="metric-card">
+                    <div class="metric-value">0</div>
+                    <div class="metric-label">Cloud Dependencies</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">&lt;1s</div>
+                    <div class="metric-label">Startup Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">&#x221E;</div>
+                    <div class="metric-label">Local Privacy</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 9: DEPLOYMENT ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="slide-content animate-fade-up">
+            <span class="tag">Deployment</span>
+            <h2 class="section-title" style="margin-top: 12px;">
+                Run it <span class="accent">anywhere</span>
+            </h2>
+            <div class="split-layout" style="margin-top: 28px;">
+                <div>
+                    <div class="code-block">
+                        <span class="comment"># Local development</span><br>
+                        <span class="cmd">$ npm run dev</span><br>
+                        <br>
+                        <span class="comment"># Docker deployment</span><br>
+                        <span class="cmd">$ docker compose up</span><br>
+                        <br>
+                        <span class="comment"># LAN mode (mobile access)</span><br>
+                        <span class="cmd">$ NETWORK=true npm run dev</span><br>
+                        <br>
+                        <span class="comment"># Production</span><br>
+                        <span class="cmd">$ npm run build && npm start</span>
+                    </div>
+                </div>
+                <div class="left">
+                    <ul class="feature-list">
+                        <li><span class="check">&#x2713;</span> Multi-stage Docker build (node:22-slim)</li>
+                        <li><span class="check">&#x2713;</span> Persistent data volume for DB</li>
+                        <li><span class="check">&#x2713;</span> Workspace mounting for projects</li>
+                        <li><span class="check">&#x2713;</span> Auto HTTPS for LAN secure context</li>
+                        <li><span class="check">&#x2713;</span> Graceful shutdown handling</li>
+                        <li><span class="check">&#x2713;</span> Git + Claude CLI pre-installed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SLIDE 10: CLOSING ============ -->
+    <div class="slide">
+        <div class="grid-bg"></div>
+        <div class="glow-orb" style="top: -100px; left: 50%; transform: translateX(-50%);"></div>
+        <div class="glow-orb" style="bottom: -150px; left: 50%; transform: translateX(-50%);"></div>
+        <div class="slide-content animate-fade-up">
+            <h2 class="section-title">
+                Your AI workflow,<br><span class="accent">under your control</span>
+            </h2>
+            <p class="body-text" style="text-align: center; margin-top: 12px;">
+                Local-first. Zero cloud dependencies. Full ownership of your data, prompts, and sessions. Built by developers, for developers.
+            </p>
+            <div style="display: flex; gap: 16px; margin-top: 32px; align-items: center;">
+                <div class="code-block" style="max-width: 280px; text-align: center; padding: 16px;">
+                    <span class="cmd">git clone</span> <span style="color: var(--color-text-dim);">&amp;&amp;</span> <span class="cmd">npm run dev</span>
+                </div>
+            </div>
+            <p style="font-size: 13px; color: var(--color-text-dim); margin-top: 24px;">
+                Personal AI OS &mdash; Developer Workbench
+            </p>
+        </div>
+    </div>
+
+</div><!-- /.slide-deck -->
+
+<!-- Navigation -->
+<div class="nav-controls">
+    <button class="nav-btn" onclick="prevSlide()">&larr;</button>
+    <span class="slide-counter"><span id="current">1</span> / <span id="total">10</span></span>
+    <button class="nav-btn" onclick="nextSlide()">&rarr;</button>
+</div>
+
+<script>
+    let current = 1;
+    const total = document.querySelectorAll('.slide').length;
+    document.getElementById('total').textContent = total;
+
+    function showSlide(n) {
+        if (n < 1) n = 1;
+        if (n > total) n = total;
+        current = n;
+        document.querySelectorAll('.slide').forEach((s, i) => {
+            s.classList.toggle('active', i === n - 1);
+        });
+        document.getElementById('current').textContent = n;
+        document.getElementById('progressBar').style.width = (n / total * 100) + '%';
+    }
+
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+    });
+
+    // Click to advance (but not on nav controls)
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.nav-controls')) nextSlide();
+    });
+
+    showSlide(1);
+</script>
+
+</body>
+</html>

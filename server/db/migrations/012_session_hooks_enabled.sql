@@ -1,0 +1,1 @@
+ALTER TABLE sessions ADD COLUMN hooks_enabled INTEGER DEFAULT 0;

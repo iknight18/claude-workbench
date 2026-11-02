@@ -1,0 +1,21 @@
+{
+  "name": "claude-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@11.9.0",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:network": "NETWORK=true turbo dev",
+    "build": "turbo build",
+    "start": "node scripts/start-prod.js",
+    "prod": "npm run build && npm run start",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  }
+}

@@ -1,0 +1,14 @@
+services:
+  agent-dashboard:
+    build: .
+    env_file: .env
+    ports:
+      - "4200:4200"
+      - "4201:4201"
+    volumes:
+      - ${WORKSPACE_HOST_PATH:-./projects}:/workspace
+      - ${PROFILES_HOST_PATH:-./profiles}:/data/profiles
+      - dashboard-data:/data
+
+volumes:
+  dashboard-data:

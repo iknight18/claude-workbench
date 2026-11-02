@@ -1,0 +1,1 @@
+ALTER TABLE sessions ADD COLUMN debug_enabled INTEGER DEFAULT 0;
